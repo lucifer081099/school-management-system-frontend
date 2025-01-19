@@ -11,8 +11,8 @@ const PrincipalDashboard = () => {
 
   // Dummy data for fallback
   const dummyData = [
-    { id: 1, name: 'John Doe', rollNumber: '001', class: '5A', house: 'Blue' },
-    { id: 2, name: 'Jane Smith', rollNumber: '002', class: '5A', house: 'Red' },
+    { id: 1, name: 'John Doe', rollNumber: '001', userClass: '5A', house: 'Blue' },
+    { id: 2, name: 'Jane Smith', rollNumber: '002', userClass: '5A', house: 'Red' },
     // Add more dummy data as needed
   ];
 
@@ -20,7 +20,7 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await axios.get('http://localhost:8081/api/students'); // Replace with your API endpoint
+        const response = await axios.get('http://localhost:8081/principal/get-student-scores'); // Replace with your API endpoint
         if (response.data && response.data.length > 0) {
           setStudents(response.data);
         } else {
@@ -114,7 +114,7 @@ const PrincipalDashboard = () => {
                 <tr key={student.id} className="border-b">
                   <td className="px-6 py-4">{student.rollNumber}</td>
                   <td className="px-6 py-4">{student.name}</td>
-                  <td className="px-6 py-4">{student.class}</td>
+                  <td className="px-6 py-4">{student.userClass}</td>
                   <td className="px-6 py-4">{student.house}</td>
                   <td className="px-6 py-4">
                     <button className="text-blue-600 hover:text-blue-800 mr-2">

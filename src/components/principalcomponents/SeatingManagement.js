@@ -21,31 +21,48 @@ const SeatingManagement = () => {
 
   // Dummy data for fallback
   const dummyStudents = [
-    { id: 1, name: "John Doe", class: "5A", house: "Blue", assigned: false },
-    { id: 2, name: "Jane Smith", class: "5A", house: "Red", assigned: false },
+    { id: 1, name: "John Doe", userClass: "5A", house: "Blue", assigned: false },
+    { id: 2, name: "Jane Smith", userClass: "5A", house: "Red", assigned: false },
     // Add more students as needed
   ];
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchStudents = async () => {
+      console.log('Fetching students...'); // Debug log
+      
+      if (!mounted) return;
+      
       try {
-        const response = await axios.get('http://localhost:8081/api/students');
-        setStudents(response.data);
+        const response = await axios.get('http://localhost:8081/principal/get-student-scores');
+        if (mounted) {
+          setStudents(response.data);
+        }
       } catch (err) {
         console.error('Failed to fetch student data:', err);
-        setStudents(dummyStudents);
+        if (mounted) {
+          setStudents(dummyStudents);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStudents();
-  }, []);
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+    };
+}, []); // Empty dependency array
 
   const isValidPlacement = (student, row, col, classroom) => {
     const sameClassInRowCol = classroom.seats?.some(seat => 
       seat.student && 
-      seat.student.class === student.class && 
+      seat.student.userClass === student.userClass && 
       (seat.row === row || seat.column === col)
     );
 
@@ -100,7 +117,7 @@ const SeatingManagement = () => {
     if (!selectedSeat || !selectedClassroom || isSeatOccupied) return;
 
     if (!isValidPlacement(student, selectedSeat.row, selectedSeat.col, selectedClassroom)) {
-      toast.error('Invalid placement! Check class and house rules.');
+      alert('Invalid placement! Check class and house rules.');
       return;
     }
 
@@ -116,6 +133,7 @@ const SeatingManagement = () => {
           ...seats[selectedSeat.row * 5 + selectedSeat.col],
           student
         };
+        alert(`Selected student: ${student.name} successfully placed at ${selectedSeat.row+1},${selectedSeat.col+1}`);
 
         return { ...classroom, seats };
       }
@@ -178,7 +196,7 @@ const SeatingManagement = () => {
                     {seat?.student && (
                       <div className="text-sm">
                         <p className="font-medium">{seat.student.name}</p>
-                        <p className="text-gray-600">Class: {seat.student.class}</p>
+                        <p className="text-gray-600">Class: {seat.student.userClass}</p>
                         <p className="text-gray-600">House: {seat.student.house}</p>
                       </div>
                     )}
@@ -215,7 +233,7 @@ const SeatingManagement = () => {
                     >
                       <p className="font-medium">{student.name}</p>
                       <p className="text-sm text-gray-600">
-                        Class: {student.class} | House: {student.house}
+                        Class: {student.userClass} | House: {student.house}
                       </p>
                     </div>
                   ))

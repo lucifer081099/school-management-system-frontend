@@ -20,7 +20,18 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log(credentials);
-    const response = await axios.get(
+
+    // hardcoded for testing purpose
+    if(credentials.role === 'principal' && credentials.username === 'admin' && credentials.password === 'admin'){
+      navigate('/principal');
+      console.log("admin");
+      return;
+    }else if(credentials.role === 'student' && credentials.username === 'admin' && credentials.password === 'admin'){
+      navigate('/student');
+      return;
+    }
+    try{
+      const response = await axios.get(
         'http://localhost:8081/authenticate/user',
         {
           params: credentials,
@@ -39,8 +50,26 @@ const Login = ({ onLogin }) => {
         sessionStorage.setItem('userRole', credentials.role);
         navigate(credentials.role === 'principal' ? '/principal' : '/student');
       } else {
+        if(credentials.role === 'principal' && credentials.username === 'admin' && credentials.password === 'admin'){
+          navigate('/principal');
+        }else if(credentials.role === 'student' && credentials.username === 'student' && credentials.password === 'student'){
+          navigate('/student');
+        }else{
+          alert('Invalid credentials');
+        }
+      }
+    }catch(error){
+      console.error('Login failed:', error);
+      
+      if(credentials.role === 'principal' && credentials.username === 'admin' && credentials.password === 'admin'){
+        navigate('/principal');
+      }else if(credentials.role === 'student' && credentials.username === 'student' && credentials.password === 'student'){
+        navigate('/student');
+      }else{
         alert('Invalid credentials');
       }
+    }
+    
   };
 
   return (
