@@ -32,9 +32,11 @@ const Login = ({ onLogin }) => {
       if(response.status !== 200) {
         alert('An unexpected error occurred. Please try again.');
         return;
-    }
+      }
     
       if (response.data.authenticated) {
+        sessionStorage.setItem('username', credentials.username);
+        sessionStorage.setItem('userRole', credentials.role);
         navigate(credentials.role === 'principal' ? '/principal' : '/student');
       } else {
         alert('Invalid credentials');

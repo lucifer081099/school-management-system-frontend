@@ -37,7 +37,7 @@ const StudentDashboard = ({ onLogout }) => {
           );
           
           if (response.status === 200) {
-            const data = response.data;  // Ensure this is what you expect
+            const data = response.data; 
             setStudentData((prevState) => ({
               ...prevState,
               enrolledSubjects: [...prevState.enrolledSubjects, data.enrolledSubject],
@@ -52,16 +52,20 @@ const StudentDashboard = ({ onLogout }) => {
       alert('An unexpected error occurred. Please try again.');
     }
   };
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    navigate('/login');
+  };
   
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Student Dashboard</h1>
           <button
-            onClick={() => navigate('/login')}
+            onClick={handleLogout}
             className="px-4 py-2 text-sm text-red-600 hover:text-red-800"
           >
             Logout
@@ -70,7 +74,6 @@ const StudentDashboard = ({ onLogout }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Personal Information Card */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -93,7 +96,6 @@ const StudentDashboard = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Exam Seat Allocation Card */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Exam Seat Allocation</h2>
           <div className="grid grid-cols-3 gap-4">
@@ -112,7 +114,6 @@ const StudentDashboard = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Enrolled Subjects Card */}
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Enrolled Subjects</h2>
@@ -152,7 +153,6 @@ const StudentDashboard = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Enroll Modal */}
       {showEnrollModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">

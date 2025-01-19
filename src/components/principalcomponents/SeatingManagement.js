@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-// import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';  // Assuming you're using react-toastify for toast messages
 
 const SeatingManagement = () => {
   const [classrooms, setClassrooms] = useState([
@@ -14,23 +15,40 @@ const SeatingManagement = () => {
   const [selectedClassroom, setSelectedClassroom] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Simulated student data
-  const [students] = useState([
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isSeatOccupied, setIsSeatOccupied] = useState(false);
+
+  // Dummy data for fallback
+  const dummyStudents = [
     { id: 1, name: "John Doe", class: "5A", house: "Blue", assigned: false },
     { id: 2, name: "Jane Smith", class: "5A", house: "Red", assigned: false },
     // Add more students as needed
-  ]);
+  ];
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await axios.get('http://localhost:8081/api/students');
+        setStudents(response.data);
+      } catch (err) {
+        console.error('Failed to fetch student data:', err);
+        setStudents(dummyStudents);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const isValidPlacement = (student, row, col, classroom) => {
-    // Check if any student from same class in same row or column
     const sameClassInRowCol = classroom.seats?.some(seat => 
       seat.student && 
       seat.student.class === student.class && 
       (seat.row === row || seat.column === col)
     );
 
-    // Check if any student from same house is adjacent
     const adjacentPositions = [
       [-1, -1], [-1, 0], [-1, 1],
       [0, -1],           [0, 1],
@@ -40,7 +58,7 @@ const SeatingManagement = () => {
     const sameHouseAdjacent = adjacentPositions.some(([rowOffset, colOffset]) => {
       const adjRow = row + rowOffset;
       const adjCol = col + colOffset;
-      
+
       if (adjRow < 0 || adjRow >= 5 || adjCol < 0 || adjCol >= 5) return false;
 
       return classroom.seats?.some(seat =>
@@ -53,17 +71,36 @@ const SeatingManagement = () => {
     return !sameClassInRowCol && !sameHouseAdjacent;
   };
 
+  const checkSeatOccupancy = async (row, col) => {
+    if (!selectedClassroom) return;
+
+    try {
+      const response = await axios.get(`http://localhost:8081/api/seat/${selectedClassroom.id}/${row}/${col}`);
+      if (response.data.isOccupied) {
+        toast.error('This seat is already taken!', { position: toast.POSITION.TOP_RIGHT });
+        setIsSeatOccupied(true);
+      } else {
+        setIsSeatOccupied(false);
+      }
+    } catch (error) {
+      console.error('Error checking seat occupancy:', error);
+      setIsSeatOccupied(false);
+    }
+  };
+
   const handleSeatClick = (row, col) => {
     if (!selectedClassroom) return;
-    
+
+    // Check seat occupancy
+    checkSeatOccupancy(row, col);
     setSelectedSeat({ row, col });
   };
 
   const handleStudentSelect = (student) => {
-    if (!selectedSeat || !selectedClassroom) return;
+    if (!selectedSeat || !selectedClassroom || isSeatOccupied) return;
 
     if (!isValidPlacement(student, selectedSeat.row, selectedSeat.col, selectedClassroom)) {
-      alert('Invalid placement! Check class and house rules.');
+      toast.error('Invalid placement! Check class and house rules.');
       return;
     }
 
@@ -152,11 +189,10 @@ const SeatingManagement = () => {
           </div>
 
           {/* Student Selection */}
-          {selectedSeat && (
+          {selectedSeat && !isSeatOccupied && (
             <div className="w-80 bg-white p-4 rounded shadow">
               <h3 className="text-lg font-semibold mb-4">Select Student</h3>
               <div className="flex items-center gap-2 mb-4">
-                {/* <Search className="text-gray-400" size={20} /> */}
                 <input
                   type="text"
                   placeholder="Search students..."
@@ -187,8 +223,15 @@ const SeatingManagement = () => {
               </div>
             </div>
           )}
+
+          {/* If seat is occupied */}
+          {isSeatOccupied && (
+            <div className="text-red-500 mt-4">Seat is already taken. Please select another seat.</div>
+          )}
         </div>
       )}
+
+      {loading && <div>Loading students...</div>}
     </div>
   );
 };
