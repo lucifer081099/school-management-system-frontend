@@ -7,6 +7,49 @@ const StudentDashboard = ({ onLogout }) => {
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const navigate = useNavigate();
 
+
+  const transformStudentData = (data) => {
+    const enrolledSubjects = [];
+    const availableSubjects = [];
+    let id = 1;
+  
+    // List of all possible subjects
+    const subjects = [
+      { key: 'english', name: 'English' },
+      { key: 'hindi', name: 'Hindi' },
+      { key: 'mathematics', name: 'Mathematics' },
+      { key: 'science', name: 'Science' },
+      { key: 'history', name: 'History' },
+      { key: 'economics', name: 'Economics' }
+    ];
+  
+    subjects.forEach(subject => {
+      if (data[subject.key] !== null) {
+        enrolledSubjects.push({
+          name: subject.name,
+          score: data[subject.key]
+        });
+      } else {
+        availableSubjects.push({
+          name: subject.name
+        });
+      }
+    });
+  
+    return {
+      name: data.name,
+      rollNumber: data.rollNumber,
+      userClass: data.userClass,
+      house: data.house,
+      classAllocated: data.classAllocated,
+      seatRow: data.seatRow,
+      seatColumn: data.seatColumn,
+      enrolledSubjects,
+      availableSubjects
+    };
+  };
+
+
   useEffect(() => {
     const fetchStudentDetails = async () => {
       try {
@@ -22,7 +65,11 @@ const StudentDashboard = ({ onLogout }) => {
         });
 
         if (response.status === 200) {
-          setStudentData(response.data); // Update studentData with API response
+          console.log(response.data);
+          console.log(response.data.english);
+          const transformedData = transformStudentData(response.data);
+          setStudentData(transformedData);
+          //setStudentData(response.data); // Update studentData with API response
         } else {
           console.error('Failed to fetch student details:', response.statusText);
           setDummyData(); // Use dummy data if API fails
@@ -32,21 +79,24 @@ const StudentDashboard = ({ onLogout }) => {
         setDummyData(); // Use dummy data in case of error
       }
     };
-
     const setDummyData = () => {
       setStudentData({
         name: 'Dummy User',
         rollNumber: '999999',
         class: '10B',
         house: 'Green',
-        examSeat: {
-          classroom: 'Room 999',
-          row: 5,
-          column: 7,
-        },
+        classAllocated: null,
+        seatRow: null,
+        seatColumn: null,
+        english: 79,
+        hindi: 88,
+        mathematics: 77,
+        science: null,
+        history: null,
+        economics: null,
         enrolledSubjects: [
-          { id: 1, name: 'Mathematics', score: 90 },
-          { id: 2, name: 'Science', score: 85 },
+          { name: 'Mathematics', score: 90 },
+          { name: 'Science', score: 85 },
         ],
         availableSubjects: [
           { id: 3, name: 'History' },
@@ -58,14 +108,17 @@ const StudentDashboard = ({ onLogout }) => {
     fetchStudentDetails();
   }, [navigate]);
 
-  const handleEnroll = async (subjectId) => {
+  const handleEnroll = async (subjectName) => {
     try {
       const response = await axios.post(
         'http://localhost:8081/student/enroll',
-        { subjectId },
+        null,  // No request body
         {
+          params: {  // Add query parameters
+            subjectName: subjectName,
+            studentName: sessionStorage.getItem('username')
+          },
           headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('authToken')}`, // Use sessionStorage
             'Content-Type': 'application/json',
           },
         }
@@ -75,8 +128,8 @@ const StudentDashboard = ({ onLogout }) => {
         const data = response.data;
         setStudentData((prevState) => ({
           ...prevState,
-          enrolledSubjects: [...prevState.enrolledSubjects, data.enrolledSubject],
-          availableSubjects: prevState.availableSubjects.filter((subject) => subject.id !== subjectId),
+          enrolledSubjects: [...prevState.enrolledSubjects, { name: subjectName, score: -1 }],
+          availableSubjects: prevState.availableSubjects.filter((subject) => subject.name !== subjectName),
         }));
         alert('Enrollment successful!');
       } else {
@@ -136,23 +189,29 @@ const StudentDashboard = ({ onLogout }) => {
         </div>
 
         {/* Exam Seat Allocation */}
-        {/* <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Exam Seat Allocation</h2>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Classroom</p>
-              <p className="font-medium">{studentData.examSeat.classroom}</p>
+          {studentData.classAllocated ? (
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Classroom</p>
+                <p className="font-medium">{studentData.classAllocated}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Row</p>
+                <p className="font-medium">{studentData.seatRow + 1}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Column</p>
+                <p className="font-medium">{studentData.seatColumn + 1}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Row</p>
-              <p className="font-medium">{studentData.examSeat.row + 1}</p>
+          ) : (
+            <div className="text-gray-500 italic">
+              No class allocated yet
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Column</p>
-              <p className="font-medium">{studentData.examSeat.column + 1}</p>
-            </div>
-          </div>
-        </div> */}
+          )}
+        </div>
 
         {/* Enrolled Subjects */}
         <div className="bg-white shadow rounded-lg p-6">
@@ -177,19 +236,19 @@ const StudentDashboard = ({ onLogout }) => {
                   </th>
                 </tr>
               </thead>
-              {/* <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {studentData.enrolledSubjects.map((subject) => (
                   <tr key={subject.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {subject.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {subject.score !== null ? `${subject.score}%` : 'Not graded'}
+                      {subject.score !== -1 ? `${subject.score}%` : 'Not graded'}
                     </td>
                   </tr>
                 ))}
-              </tbody> */}
-              <tbody className="bg-white divide-y divide-gray-200">
+              </tbody>
+              {/* <tbody className="bg-white divide-y divide-gray-200">
                 <tr>
                   <td className="px-6 py-4 whitespace-nowrap">Mathematics</td>
                   <td className="px-6 py-4 whitespace-nowrap">85%</td>
@@ -206,7 +265,7 @@ const StudentDashboard = ({ onLogout }) => {
                   <td className="px-6 py-4 whitespace-nowrap">History</td>
                   <td className="px-6 py-4 whitespace-nowrap">Not graded</td>
                 </tr>
-              </tbody>
+              </tbody> */}
             </table>
           </div>
         </div>
@@ -218,42 +277,20 @@ const StudentDashboard = ({ onLogout }) => {
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Enroll in New Subject</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                <span>Mathematics</span>
-                <button
-                  onClick={() => handleEnroll(1)}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              {studentData.availableSubjects.map((subject) => (
+                <div
+                  key={subject.id}
+                  className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
                 >
-                  Enroll
-                </button>
-              </div>
-              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                <span>Science</span>
-                <button
-                  onClick={() => handleEnroll(2)}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Enroll
-                </button>
-              </div>
-              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                <span>English</span>
-                <button
-                  onClick={() => handleEnroll(3)}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Enroll
-                </button>
-              </div>
-              <div className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                <span>History</span>
-                <button
-                  onClick={() => handleEnroll(4)}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Enroll
-                </button>
-              </div>
+                  <span>{subject.name}</span>
+                  <button 
+                    onClick={() => handleEnroll(subject.name)}
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Enroll
+                  </button>
+                </div>
+              ))}
             </div>
             <div className="mt-6 flex justify-end">
               <button
