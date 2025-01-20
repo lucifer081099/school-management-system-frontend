@@ -33,12 +33,46 @@ const ScoreManagement = () => {
     }
   ];
 
+  const transformStudentsData = (data) => {
+    // List of all possible subjects
+    const subjects = [
+      { key: 'english', name: 'English' },
+      { key: 'hindi', name: 'Hindi' },
+      { key: 'mathematics', name: 'Mathematics' },
+      { key: 'science', name: 'Science' },
+      { key: 'history', name: 'History' },
+      { key: 'economics', name: 'Economics' }
+    ];
+  
+    return data.map(student => {
+      const studentSubjects = [];
+      
+      subjects.forEach(subject => {
+        if (student[subject.key] !== null) {
+          studentSubjects.push({
+            name: subject.name,
+            score: student[subject.key]
+          });
+        }
+      });
+  
+      return {
+        id: student.id || Math.random(),
+        name: student.name,
+        userClass: student.userClass,
+        subjects: studentSubjects
+      };
+    });
+  };
+
   // Fetch data from API on component mount
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const response = await axios.get('http://localhost:8081/principal/get-student-scores');
-        setStudents(response.data); // Assume the API returns a list of students
+        const transformedData = transformStudentsData(response.data);
+        console.log('Fetched students:', transformedData);
+        setStudents(transformedData);
         setLoading(false);
       } catch (err) {
         // setError('Failed to fetch student data');
@@ -135,7 +169,7 @@ const ScoreManagement = () => {
                 </button>
               </div>
 
-              {selectedStudent?.id === student.id && (
+              {selectedStudent?.name === student.name && (
                 <div className="mt-4">
                   <table className="w-full">
                     <thead>
@@ -146,30 +180,45 @@ const ScoreManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {['English', 'Hindi', 'Marathi', 'Science', 'Maths'].map((subject) => (
-                        <tr key={subject.id} className="border-t">
-                          <td className="px-4 py-2">{subject}</td>
-                          <td className="px-4 py-2">
-                            {subject.score ?? 'Not graded'}
-                          </td>
-                          <td className="px-4 py-2">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              className="w-20 p-1 border rounded"
-                              placeholder="Score"
-                              onChange={(e) =>
-                                handleScoreUpdate(
-                                  student.name,
-                                  subject.name,
-                                  parseInt(e.target.value)
-                                )
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
+                    {selectedStudent && selectedStudent.studentSubjects && (
+                      <div className="mt-4">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr>
+                              <th className="px-4 py-2">Subject</th>
+                              <th className="px-4 py-2">Current Score</th>
+                              <th className="px-4 py-2">Update Score</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedStudent.studentSubjects.map((subject) => (
+                              <tr key={subject.name} className="border-t">
+                                <td className="px-4 py-2">{subject.name}</td>
+                                <td className="px-4 py-2">
+                                  {subject.score ?? 'Not graded'}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    className="w-20 p-1 border rounded"
+                                    placeholder="Score"
+                                    onChange={(e) =>
+                                      handleScoreUpdate(
+                                        selectedStudent.name,
+                                        subject.name,
+                                        parseInt(e.target.value)
+                                      )
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                     </tbody>
                   </table>
                 </div>
