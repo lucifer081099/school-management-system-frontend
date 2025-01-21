@@ -16,6 +16,7 @@ const SeatingManagement = () => {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [students, setStudents] = useState([]);
+  const [originalStudents, setOriginalStudents] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSeatOccupied, setIsSeatOccupied] = useState(false);
 
@@ -37,7 +38,18 @@ const SeatingManagement = () => {
       try {
         const response = await axios.get('http://localhost:8081/principal/get-student-scores');
         if (mounted) {
-          setStudents(response.data);
+          const transformedData = response.data.map(student => ({
+            id: student.username, // Using username as id
+            name: student.name,
+            userClass: student.userClass,
+            house: student.house,
+            assigned: student.classAllocated? true: false,
+            classAllocated: student.classAllocated,
+            seatRow: student.seatRow,
+            seatColumn: student.seatColumn
+          }));
+          setStudents(transformedData);
+          setOriginalStudents(transformedData);
         }
       } catch (err) {
         console.error('Failed to fetch student data:', err);
@@ -111,6 +123,11 @@ const SeatingManagement = () => {
     // Check seat occupancy
     checkSeatOccupancy(row, col);
     setSelectedSeat({ row, col });
+    const validStudents = originalStudents.filter(student => 
+      student && !student.assigned && 
+      isValidPlacement(student, row, col, selectedClassroom)
+    );
+    setStudents(validStudents);
   };
 
   const handleStudentSelect = (student) => {
@@ -141,6 +158,13 @@ const SeatingManagement = () => {
     });
 
     setClassrooms(updatedClassrooms);
+    const updatedSelectedClassroom = updatedClassrooms.find(classroom => classroom.id === selectedClassroom.id);
+    const updatedStudents = originalStudents.map(s => 
+      s.id === student.id ? { ...s, assigned: true } : s
+    );
+    setStudents(updatedStudents);
+    setOriginalStudents(updatedStudents);
+    setSelectedClassroom(updatedSelectedClassroom);
     setSelectedSeat(null);
   };
 

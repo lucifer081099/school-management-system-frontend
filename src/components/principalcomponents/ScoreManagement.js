@@ -180,45 +180,30 @@ const ScoreManagement = () => {
                       </tr>
                     </thead>
                     <tbody>
-                    {selectedStudent && selectedStudent.studentSubjects && (
-                      <div className="mt-4">
-                        <table className="min-w-full">
-                          <thead>
-                            <tr>
-                              <th className="px-4 py-2">Subject</th>
-                              <th className="px-4 py-2">Current Score</th>
-                              <th className="px-4 py-2">Update Score</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedStudent.studentSubjects.map((subject) => (
-                              <tr key={subject.name} className="border-t">
-                                <td className="px-4 py-2">{subject.name}</td>
-                                <td className="px-4 py-2">
-                                  {subject.score ?? 'Not graded'}
-                                </td>
-                                <td className="px-4 py-2">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    className="w-20 p-1 border rounded"
-                                    placeholder="Score"
-                                    onChange={(e) =>
-                                      handleScoreUpdate(
-                                        selectedStudent.name,
-                                        subject.name,
-                                        parseInt(e.target.value)
-                                      )
-                                    }
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                    {selectedStudent?.subjects?.map((subject) => (
+                      <tr key={subject.name} className="border-t">
+                        <td className="px-4 py-2">{subject.name}</td>
+                        <td className="px-4 py-2">
+                          {subject.score !== '0' ? `${subject.score}%` : 'Not graded'}
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            className="w-20 p-1 border rounded"
+                            placeholder="Score"
+                            onChange={(e) =>
+                              handleScoreUpdate(
+                                student.name,
+                                subject.name,
+                                parseInt(e.target.value)
+                              )
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))}
                     </tbody>
                   </table>
                 </div>
