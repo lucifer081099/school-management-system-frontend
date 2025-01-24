@@ -48,6 +48,33 @@ const SeatingManagement = () => {
             seatRow: student.seatRow,
             seatColumn: student.seatColumn
           }));
+          // Initialize classrooms with allocated seats
+          const updatedClassrooms = classrooms.map(classroom => {
+            const allocatedStudents = transformedData.filter(
+              student => student.classAllocated === classroom.name
+            );
+            
+            const seats = Array(25).fill(null).map((_, index) => ({
+              row: Math.floor(index / 5),
+              column: index % 5,
+              student: null
+            }));
+            
+            allocatedStudents.forEach(student => {
+              if (student.seatRow !== null && student.seatColumn !== null) {
+                console.log("student  ", student);
+                //const index = student.seatRow * 5 + student.seatColumn;
+                //seats[index] = { ...seats[index], student };
+                seats[selectedSeat.row * 5 + selectedSeat.col] = {
+                  ...seats[selectedSeat.row * 5 + selectedSeat.col],
+                  student
+                };
+              }
+            });
+            
+            return { ...classroom, seats };
+          });
+          setClassrooms(updatedClassrooms);
           setStudents(transformedData);
           setOriginalStudents(transformedData);
         }
@@ -130,7 +157,7 @@ const SeatingManagement = () => {
     setStudents(validStudents);
   };
 
-  const handleStudentSelect = (student) => {
+  const handleStudentSelect = async (student) => {
     if (!selectedSeat || !selectedClassroom || isSeatOccupied) return;
 
     if (!isValidPlacement(student, selectedSeat.row, selectedSeat.col, selectedClassroom)) {
@@ -138,34 +165,70 @@ const SeatingManagement = () => {
       return;
     }
 
-    const updatedClassrooms = classrooms.map(classroom => {
-      if (classroom.id === selectedClassroom.id) {
-        const seats = classroom.seats || Array(25).fill(null).map((_, index) => ({
-          row: Math.floor(index / 5),
-          column: index % 5,
-          student: null
-        }));
+    try {
+      // Call API to update seat allocation
+    
+      const response = await axios.post(
+        'http://localhost:8081/principal/allocate-seat',
+        null,
+        {
+          params: {
+            studentUsername: student.id,
+            classroomName: selectedClassroom.name,
+            seatRow: selectedSeat.row,
+            seatColumn: selectedSeat.col
+          },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+  
+      if (response.status === 200) {
 
-        seats[selectedSeat.row * 5 + selectedSeat.col] = {
-          ...seats[selectedSeat.row * 5 + selectedSeat.col],
-          student
-        };
-        alert(`Selected student: ${student.name} successfully placed at ${selectedSeat.row+1},${selectedSeat.col+1}`);
-
-        return { ...classroom, seats };
+        // Update local state
+        const updatedClassrooms = classrooms.map(classroom => {
+          if (classroom.id === selectedClassroom.id) {
+            const seats = classroom.seats || Array(25).fill(null).map((_, index) => ({
+              row: Math.floor(index / 5),
+              column: index % 5,
+              student: null
+            }));
+  
+            seats[selectedSeat.row * 5 + selectedSeat.col] = {
+              ...seats[selectedSeat.row * 5 + selectedSeat.col],
+              student
+            };
+  
+            return { ...classroom, seats };
+          }
+          return classroom;
+        });
+  
+        setClassrooms(updatedClassrooms);
+        
+        // Update student allocation status
+        const updatedStudents = originalStudents.map(s => 
+          s.id === student.id ? { 
+            ...s, 
+            assigned: true,
+            classAllocated: selectedClassroom.id,
+            seatRow: selectedSeat.row,
+            seatColumn: selectedSeat.col
+          } : s
+        );
+        
+        setStudents(updatedStudents);
+        setOriginalStudents(updatedStudents);
+        setSelectedClassroom(updatedClassrooms.find(c => c.id === selectedClassroom.id));
+        setSelectedSeat(null);
+        alert(`Seat allocated for ${student.name}`);
+        toast.success(`Seat allocated for ${student.name}`);
       }
-      return classroom;
-    });
-
-    setClassrooms(updatedClassrooms);
-    const updatedSelectedClassroom = updatedClassrooms.find(classroom => classroom.id === selectedClassroom.id);
-    const updatedStudents = originalStudents.map(s => 
-      s.id === student.id ? { ...s, assigned: true } : s
-    );
-    setStudents(updatedStudents);
-    setOriginalStudents(updatedStudents);
-    setSelectedClassroom(updatedSelectedClassroom);
-    setSelectedSeat(null);
+    } catch (error) {
+      console.error('Failed to allocate seat:', error);
+      toast.error('Failed to allocate seat');
+    }
   };
 
   return (

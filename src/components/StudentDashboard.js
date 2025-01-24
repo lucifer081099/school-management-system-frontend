@@ -199,11 +199,11 @@ const StudentDashboard = ({ onLogout }) => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Row</p>
-                <p className="font-medium">{studentData.seatRow + 1}</p>
+                <p className="font-medium">{studentData.seatRow}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Column</p>
-                <p className="font-medium">{studentData.seatColumn + 1}</p>
+                <p className="font-medium">{studentData.seatColumn}</p>
               </div>
             </div>
           ) : (
