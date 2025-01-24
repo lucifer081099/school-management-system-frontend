@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import axios from 'axios';
+import Fuse from 'fuse.js';
 
 const ScoreManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,7 +14,7 @@ const ScoreManagement = () => {
   const dummyData = [
     {
       id: 1,
-      name: "John Doe",
+      name: "Aman",
       userClass: "5A",
       subjects: [
         { name: "Mathematics", score: null },
@@ -23,7 +24,7 @@ const ScoreManagement = () => {
     },
     {
       id: 2,
-      name: "Jane Smith",
+      name: "Aamar",
       userClass: "5B",
       subjects: [
         { name: "Mathematics", score: 80 },
@@ -124,6 +125,14 @@ const ScoreManagement = () => {
     }
   };
 
+  // Fuzzy search setup
+  const fuse = new Fuse(students, {
+    keys: ['name', 'userClass', 'subjects.name'],
+    threshold: 0.3, // Adjust the threshold as needed
+  });
+
+  const filteredStudents = searchQuery ? fuse.search(searchQuery).map(result => result.item) : students;
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -150,66 +159,62 @@ const ScoreManagement = () => {
 
       {/* Student List */}
       <div className="grid grid-cols-1 gap-4">
-        {students
-          .filter((student) =>
-            student.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .map((student) => (
-            <div key={student.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold">{student.name}</h3>
-                  <p className="text-gray-600">Class: {student.userClass}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedStudent(student)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Update Scores
-                </button>
+        {filteredStudents.map((student) => (
+          <div key={student.id} className="border rounded-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">{student.name}</h3>
+                <p className="text-gray-600">Class: {student.userClass}</p>
               </div>
-
-              {selectedStudent?.name === student.name && (
-                <div className="mt-4">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-2 text-left">Subject</th>
-                        <th className="px-4 py-2 text-left">Score</th>
-                        <th className="px-4 py-2 text-left">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                    {selectedStudent?.subjects?.map((subject) => (
-                      <tr key={subject.name} className="border-t">
-                        <td className="px-4 py-2">{subject.name}</td>
-                        <td className="px-4 py-2">
-                          {subject.score !== '0' ? `${subject.score}%` : 'Not graded'}
-                        </td>
-                        <td className="px-4 py-2">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            className="w-20 p-1 border rounded"
-                            placeholder="Score"
-                            onChange={(e) =>
-                              handleScoreUpdate(
-                                student.name,
-                                subject.name,
-                                parseInt(e.target.value)
-                              )
-                            }
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <button
+                onClick={() => setSelectedStudent(student)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Update Scores
+              </button>
             </div>
-          ))}
+
+            {selectedStudent?.name === student.name && (
+              <div className="mt-4">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-2 text-left">Subject</th>
+                      <th className="px-4 py-2 text-left">Score</th>
+                      <th className="px-4 py-2 text-left">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {selectedStudent?.subjects?.map((subject) => (
+                    <tr key={subject.name} className="border-t">
+                      <td className="px-4 py-2">{subject.name}</td>
+                      <td className="px-4 py-2">
+                        {subject.score !== '0' ? `${subject.score}%` : 'Not graded'}
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-20 p-1 border rounded"
+                          placeholder="Score"
+                          onBlur={(e) =>
+                            handleScoreUpdate(
+                              student.name,
+                              subject.name,
+                              parseInt(e.target.value)
+                            )
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

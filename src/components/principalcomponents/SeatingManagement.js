@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';  // Assuming you're using react-toastify for toast messages
+import Fuse from 'fuse.js';
 
 const SeatingManagement = () => {
   const [classrooms, setClassrooms] = useState([
@@ -22,8 +23,8 @@ const SeatingManagement = () => {
 
   // Dummy data for fallback
   const dummyStudents = [
-    { id: 1, name: "John Doe", userClass: "5A", house: "Blue", assigned: false },
-    { id: 2, name: "Jane Smith", userClass: "5A", house: "Red", assigned: false },
+    { id: 1, name: "Aman", userClass: "5A", house: "Blue", assigned: false },
+    { id: 2, name: "Aamar", userClass: "5A", house: "Red", assigned: false },
     // Add more students as needed
   ];
 
@@ -43,7 +44,7 @@ const SeatingManagement = () => {
             name: student.name,
             userClass: student.userClass,
             house: student.house,
-            assigned: student.classAllocated? true: false,
+            assigned: student.classAllocated ? true : false,
             classAllocated: student.classAllocated,
             seatRow: student.seatRow,
             seatColumn: student.seatColumn
@@ -63,10 +64,8 @@ const SeatingManagement = () => {
             allocatedStudents.forEach(student => {
               if (student.seatRow !== null && student.seatColumn !== null) {
                 console.log("student  ", student);
-                //const index = student.seatRow * 5 + student.seatColumn;
-                //seats[index] = { ...seats[index], student };
-                seats[selectedSeat.row * 5 + selectedSeat.col] = {
-                  ...seats[selectedSeat.row * 5 + selectedSeat.col],
+                seats[student.seatRow * 5 + student.seatColumn] = {
+                  ...seats[student.seatRow * 5 + student.seatColumn],
                   student
                 };
               }
@@ -96,7 +95,7 @@ const SeatingManagement = () => {
     return () => {
       mounted = false;
     };
-}, []); // Empty dependency array
+  }, []); // Empty dependency array
 
   const isValidPlacement = (student, row, col, classroom) => {
     const sameClassInRowCol = classroom.seats?.some(seat => 
@@ -231,6 +230,14 @@ const SeatingManagement = () => {
     }
   };
 
+  // Fuzzy search setup
+  const fuse = new Fuse(students, {
+    keys: ['name', 'userClass', 'house'],
+    threshold: 0.3, // Adjust the threshold as needed
+  });
+
+  const filteredStudents = searchQuery ? fuse.search(searchQuery).map(result => result.item) : students;
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6">Seating Management</h2>
@@ -307,11 +314,7 @@ const SeatingManagement = () => {
                 />
               </div>
               <div className="space-y-2">
-                {students
-                  .filter(student => 
-                    !student.assigned &&
-                    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
+                {filteredStudents
                   .map(student => (
                     <div
                       key={student.id}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Fuse from 'fuse.js';
 
 const PrincipalDashboard = () => {
   const navigate = useNavigate();
@@ -11,8 +12,8 @@ const PrincipalDashboard = () => {
 
   // Dummy data for fallback
   const dummyData = [
-    { id: 1, name: 'John Doe', rollNumber: '001', userClass: '5A', house: 'Blue' },
-    { id: 2, name: 'Jane Smith', rollNumber: '002', userClass: '5A', house: 'Red' },
+    { id: 1, name: 'Aman', rollNumber: '001', userClass: '5A', house: 'Blue' },
+    { id: 2, name: 'Aamar', rollNumber: '002', userClass: '5A', house: 'Red' },
     // Add more dummy data as needed
   ];
 
@@ -40,7 +41,6 @@ const PrincipalDashboard = () => {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    // You can add filtering logic here for student search based on `searchQuery`
   };
 
   const handleLogout = () => {
@@ -49,6 +49,14 @@ const PrincipalDashboard = () => {
     // Navigate to login
     navigate('/login');
   };
+
+  // Fuzzy search setup
+  const fuse = new Fuse(students, {
+    keys: ['name', 'rollNumber', 'userClass', 'house'],
+    threshold: 0.3, // Adjust the threshold as needed
+  });
+
+  const filteredStudents = searchQuery ? fuse.search(searchQuery).map(result => result.item) : students;
 
   return (
     <div className="p-6">
@@ -108,9 +116,7 @@ const PrincipalDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {students.filter(student => 
-                student.name.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map((student) => (
+              {filteredStudents.map((student) => (
                 <tr key={student.id} className="border-b">
                   <td className="px-6 py-4">{student.rollNumber}</td>
                   <td className="px-6 py-4">{student.name}</td>
